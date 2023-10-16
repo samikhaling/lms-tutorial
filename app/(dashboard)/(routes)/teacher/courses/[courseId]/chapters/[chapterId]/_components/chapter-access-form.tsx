@@ -8,33 +8,37 @@ import { Pencil } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { Course } from "@prisma/client";
+import { Chapter } from "@prisma/client";
 
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { formatPrice } from "@/lib/format";
+import { Editor } from "@/components/editor";
+import { Preview } from "@/components/preview";
+import { Checkbox } from "@/components/ui/checkbox";
 
-interface PriceFormProps {
-  initialData: Course;
+interface ChapterAccessFormProps {
+  initialData: Chapter;
   courseId: string;
+  chapterId: string;
 };
 
 const formSchema = z.object({
-  price: z.coerce.number(),
+  isFree: z.boolean().default(false),
 });
 
-export const PriceForm = ({
+export const ChapterAccessForm = ({
   initialData,
-  courseId
-}: PriceFormProps) => {
+  courseId,
+  chapterId
+}: ChapterAccessFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const toggleEdit = () => setIsEditing((current) => !current);
@@ -44,7 +48,7 @@ export const PriceForm = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      price: initialData?.price || undefined,
+      isFree: !!initialData.isFree
     },
   });
 
@@ -52,8 +56,8 @@ export const PriceForm = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.patch(`/api/courses/${courseId}`, values);
-      toast.success("Course updated");
+      await axios.patch(`/api/courses/${courseId}/chapters/${chapterId}`, values);
+      toast.success("Chapter updated");
       toggleEdit();
       router.refresh();
     } catch {
@@ -64,14 +68,14 @@ export const PriceForm = ({
   return (
     <div className="mt-6 border bg-slate-100 rounded-md p-4">
       <div className="font-medium flex items-center justify-between">
-        Course price
+        Chapter access
         <Button onClick={toggleEdit} variant="ghost">
           {isEditing ? (
             <>Cancel</>
           ) : (
             <>
               <Pencil className="h-4 w-4 mr-2" />
-              Edit price
+              Edit access
             </>
           )}
         </Button>
@@ -79,12 +83,13 @@ export const PriceForm = ({
       {!isEditing && (
         <p className={cn(
           "text-sm mt-2",
-          !initialData.price && "text-slate-500 italic"
+          !initialData.isFree && "text-slate-500 italic"
         )}>
-          {initialData.price
-            ? formatPrice(initialData.price)
-            : "No price"
-          }
+          {initialData.isFree ? (
+            <>This chapter is free for preview.</>
+          ) : (
+            <>This chapter is not free.</>
+          )}
         </p>
       )}
       {isEditing && (
@@ -95,19 +100,20 @@ export const PriceForm = ({
           >
             <FormField
               control={form.control}
-              name="price"
+              name="isFree"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      disabled={isSubmitting}
-                      placeholder="Set a price for your course"
-                      {...field}
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <div className="space-y-1 leading-none">
+                    <FormDescription>
+                      Check this box if you want to make this chapter free for preview
+                    </FormDescription>
+                  </div>
                 </FormItem>
               )}
             />
