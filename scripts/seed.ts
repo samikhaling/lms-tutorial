@@ -9,7 +9,7 @@ async function main() {
                 { name : "Music" },
                 { name : "Fitness" },
                 { name : "Photography" },
-                { name : "Acoounting" },
+                { name : "Accounting" },
                 { name : "Engineering" },
                 { name : "Filming" },
 
